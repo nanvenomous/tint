@@ -1,0 +1,47 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binaries
+*.test
+*.out
+
+# Go
+go.work
+go.work.sum
+
+# Coverage
+*.coverage
+coverage.txt
+*.coverprofile
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+build/
+target/
+*.o
+*.a
+
+# Dependencies
+vendor/
+node_modules/
+
+# Compiled formats (runtime generated)
+.cache/
+*.cache
+
+# Local testing
+test-configs/
+.test/

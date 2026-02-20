@@ -1,0 +1,307 @@
+# tint Specification v1.0
+
+This document defines the `tint` colorscheme format and its implementation requirements.
+
+---
+
+## File Location
+
+The colorscheme file **MUST** be located at one of the following paths, checked in order:
+
+1. `$XDG_CONFIG_HOME/colors.{yml,yaml,toml,json}`
+2. `~/.config/colors.{yml,yaml,toml,json}`
+
+The first file found is used. Extensions are checked in the order: `.yml`, `.yaml`, `.toml`, `.json`.
+
+---
+
+## Format
+
+The file **MUST** use one of the following formats:
+
+- YAML (`.yml` or `.yaml`)
+- TOML (`.toml`)
+- JSON (`.json`)
+
+All formats represent the same structure. Implementations **MUST** support all three formats.
+
+---
+
+## Schema
+
+### Required Fields
+
+- `background` (string): Background color in hex format (`#RRGGBB` or `#RRGGBBAA`)
+- `foreground` (string): Foreground color in hex format
+
+### Standard Fields
+
+- `colors` (object): Standard ANSI color palette
+  - `black` (string)
+  - `red` (string)
+  - `green` (string)
+  - `yellow` (string)
+  - `blue` (string)
+  - `magenta` (string)
+  - `cyan` (string)
+  - `white` (string)
+- `accent` (string): Primary accent color
+- `selection` (string): Selection/highlight background color
+
+### Extended Fields
+
+Implementations **MAY** support additional fields for advanced use cases:
+
+- `bright_colors` (object): Bright variant ANSI colors
+  - `bright_black` (string)
+  - `bright_red` (string)
+  - `bright_green` (string)
+  - `bright_yellow` (string)
+  - `bright_blue` (string)
+  - `bright_magenta` (string)
+  - `bright_cyan` (string)
+  - `bright_white` (string)
+- `cursor` (string): Cursor color
+- `cursor_text` (string): Text under cursor
+- `border` (string): Border/separator color
+- `comment` (string): Comment/dim text color
+
+All fields are **OPTIONAL**. Implementations **MUST** gracefully handle missing fields.
+
+---
+
+## Color Format
+
+Colors **MUST** be specified as hex strings in one of these formats:
+
+- `#RGB` (short form, e.g., `#f00` for red)
+- `#RRGGBB` (standard form, e.g., `#ff0000`)
+- `#RRGGBBAA` (with alpha channel, e.g., `#ff0000ff`)
+
+Case is **insensitive** (`#FF0000` and `#ff0000` are equivalent).
+
+Implementations **SHOULD** validate color format but **MAY** accept colors and convert them to a canonical form.
+
+---
+
+## Example Files
+
+### YAML
+
+```yaml
+# ~/.config/colors.yml
+
+background: "#1e1e2e"
+foreground: "#cdd6f4"
+
+colors:
+  black:   "#45475a"
+  red:     "#f38ba8"
+  green:   "#a6e3a1"
+  yellow:  "#f9e2af"
+  blue:    "#89b4fa"
+  magenta: "#cba4f7"
+  cyan:    "#94e2d5"
+  white:   "#bac2de"
+
+accent:    "#89b4fa"
+selection: "#313244"
+cursor:    "#cdd6f4"
+```
+
+### TOML
+
+```toml
+# ~/.config/colors.toml
+
+background = "#1e1e2e"
+foreground = "#cdd6f4"
+accent = "#89b4fa"
+selection = "#313244"
+
+[colors]
+black = "#45475a"
+red = "#f38ba8"
+green = "#a6e3a1"
+yellow = "#f9e2af"
+blue = "#89b4fa"
+magenta = "#cba4f7"
+cyan = "#94e2d5"
+white = "#bac2de"
+```
+
+### JSON
+
+```json
+{
+  "background": "#1e1e2e",
+  "foreground": "#cdd6f4",
+  "accent": "#89b4fa",
+  "selection": "#313244",
+  "colors": {
+    "black": "#45475a",
+    "red": "#f38ba8",
+    "green": "#a6e3a1",
+    "yellow": "#f9e2af",
+    "blue": "#89b4fa",
+    "magenta": "#cba4f7",
+    "cyan": "#94e2d5",
+    "white": "#bac2de"
+  }
+}
+```
+
+---
+
+## Implementation Requirements
+
+### File Discovery
+
+Implementations **MUST**:
+
+1. Check for `$XDG_CONFIG_HOME` environment variable
+2. Fall back to `~/.config` if not set
+3. Try extensions in order: `.yml`, `.yaml`, `.toml`, `.json`
+4. Return an error if no file is found (allowing graceful fallback to app defaults)
+
+### Parsing
+
+Implementations **MUST**:
+
+- Detect format from file extension
+- Parse the file according to the format specification
+- Return structured data matching the schema
+- Handle parsing errors gracefully
+
+### Validation
+
+Implementations **SHOULD**:
+
+- Validate hex color format
+- Normalize colors to a canonical form (e.g., lowercase, 6-digit)
+- Warn on unrecognized fields (but not fail)
+
+Implementations **MUST NOT**:
+
+- Fail on missing optional fields
+- Modify user config files
+- Require all fields to be present
+
+### Error Handling
+
+Implementations **MUST**:
+
+- Return an error if the file exists but cannot be parsed
+- Return an error if the file is not found (allowing callers to use defaults)
+- Provide meaningful error messages for debugging
+
+---
+
+## Compiled Format
+
+For languages where including YAML/TOML/JSON parsers is impractical, the `tint` CLI provides a compiled format.
+
+### Location
+
+`~/.cache/tint/colors`
+
+### Format
+
+Simple key-value pairs, one per line:
+
+```
+background=#1e1e2e
+foreground=#cdd6f4
+black=#45475a
+red=#f38ba8
+green=#a6e3a1
+yellow=#f9e2af
+blue=#89b4fa
+magenta=#cba4f7
+cyan=#94e2d5
+white=#bac2de
+accent=#89b4fa
+selection=#313244
+```
+
+- No nested structures (colors.* fields are flattened to their names)
+- No quotes around values
+- No spaces around `=`
+- UTF-8 encoding
+- Unix line endings (`\n`)
+
+This format **MUST** be generated by running:
+
+```sh
+tint compile
+```
+
+---
+
+## Compatibility
+
+### Environment Variables
+
+Implementations **SHOULD** support:
+
+- `TINT_CONFIG_PATH`: Override config file location
+- `XDG_CONFIG_HOME`: Standard XDG base directory
+
+### Backwards Compatibility
+
+Future versions of this spec **MUST**:
+
+- Remain backwards compatible with v1.0 files
+- Only add optional fields, never remove or change existing ones
+- Maintain the same file location and format detection logic
+
+---
+
+## SDK Guidelines
+
+Official SDKs **SHOULD** provide:
+
+1. A `Load()` function that discovers and parses the config file
+2. A structured type/class representing the colorscheme
+3. Graceful fallback when the file is not found
+4. Minimal dependencies (ideally only format parsers)
+
+Example API surface (Go):
+
+```go
+type ColorScheme struct {
+    Background string
+    Foreground string
+    Colors     map[string]string
+    Accent     string
+    Selection  string
+}
+
+func Load() (*ColorScheme, error)
+func LoadFrom(path string) (*ColorScheme, error)
+```
+
+---
+
+## Security Considerations
+
+Implementations **MUST**:
+
+- Validate that config files are owned by the current user or root
+- Limit file size to prevent resource exhaustion (recommended: 1 MB max)
+- Sanitize file paths to prevent directory traversal
+
+Implementations **SHOULD**:
+
+- Check file permissions (warn if world-writable)
+- Set reasonable parse limits (e.g., max nesting depth)
+
+---
+
+## License
+
+This specification is released under the MIT License.
+
+---
+
+*Last updated: 2026-02-20*
